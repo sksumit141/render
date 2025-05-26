@@ -2,6 +2,7 @@ const express = require('express');
 const puppeteer = require('puppeteer');
 const path = require('path');
 const cors = require('cors');
+require("dotenv").config();
 
 const app = express();
 const PORT = 3000;
@@ -14,12 +15,21 @@ app.use(cors({
 }));
 
 // Serve static frontend
-app.use(express.static(path.join(__dirname, '../frontend')));
+//app.use(express.static(path.join(__dirname, '../frontend')));
 
 app.post('/screenshot', async (req, res) => {
   const browser = await puppeteer.launch({
     headless: 'new', // ensure newer headless mode
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: [
+      "--disable-setuid-sandbox",
+      "--no-sandbox",
+      "--single-process",
+      "--no-zygote",
+    ],
+    executablePath:
+      process.env.NODE_ENV === "production"
+        ? process.env.PUPPETEER_EXECUTABLE_PATH
+        : puppeteer.executablePath(),
   });
 
   const page = await browser.newPage();
