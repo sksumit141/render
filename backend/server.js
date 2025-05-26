@@ -9,7 +9,7 @@ const PORT = 3000;
 
 // CORS config
 app.use(cors({
-  origin: ["https://render-sand-zeta.vercel.app", "http://localhost:3000"],
+  origin: ['https://render-sand-zeta.vercel.app', 'http://localhost:3000'],
   methods: ['GET', 'POST'],
   credentials: true
 }));
