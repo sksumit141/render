@@ -14,9 +14,17 @@ app.use(cors({
   credentials: true
 }));
 
+// Add CSP headers middleware
+app.use((req, res, next) => {
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; font-src 'self' https: data:; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';"
+  );
+  next();
+});
+
 app.post('/screenshot', async (req, res) => {
   let browser;
-
   try {
     browser = await puppeteer.launch({
       headless: 'new',
