@@ -5,7 +5,7 @@ const cors = require('cors');
 require("dotenv").config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // CORS config
 app.use(cors({
@@ -14,43 +14,51 @@ app.use(cors({
   credentials: true
 }));
 
-// Serve static frontend
-//app.use(express.static(path.join(__dirname, '../frontend')));
-
 app.post('/screenshot', async (req, res) => {
-  const browser = await puppeteer.launch({
-    headless: 'new', // ensure newer headless mode
-    args: [
-      "--disable-setuid-sandbox",
-      "--no-sandbox",
-      "--single-process",
-      "--no-zygote",
-    ],
-    executablePath:
-      process.env.NODE_ENV === "production"
-        ? process.env.PUPPETEER_EXECUTABLE_PATH
-        : puppeteer.executablePath(),
-  });
+  let browser;
 
-  const page = await browser.newPage();
+  try {
+    browser = await puppeteer.launch({
+      headless: 'new',
+      args: [
+        "--disable-setuid-sandbox",
+        "--no-sandbox",
+        "--single-process",
+        "--no-zygote",
+      ],
+      executablePath:
+        process.env.NODE_ENV === "production"
+          ? process.env.PUPPETEER_EXECUTABLE_PATH
+          : puppeteer.executablePath(),
+    });
 
-  const url = `http://localhost:${PORT}`;
-  await page.goto(url, { waitUntil: 'networkidle0' });
+    const page = await browser.newPage();
 
-  // Set viewport to large height to allow full content rendering
-  const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
-  await page.setViewport({ width: 1200, height: 3000 });
+    // Log browser console messages
+    page.on('console', msg => console.log('PAGE LOG:', msg.text()));
 
-  // Capture full page screenshot
-  const screenshot = await page.screenshot({ type: 'png' });
+    // Use the public URL when deployed
+    const url = process.env.TARGET_URL || `http://localhost:${PORT}`;
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
 
-  await browser.close();
+    // Get full page height
+    const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
+    await page.setViewport({ width: 1200, height: bodyHeight });
 
-  res.setHeader('Content-Disposition', 'attachment; filename="screenshot.png"');
-  res.setHeader('Content-Type', 'image/png');
-  res.send(screenshot);
+    const screenshot = await page.screenshot({ type: 'png' });
+
+    res.setHeader('Content-Disposition', 'attachment; filename="screenshot.png"');
+    res.setHeader('Content-Type', 'image/png');
+    res.send(screenshot);
+
+  } catch (error) {
+    console.error('Error taking screenshot:', error);
+    res.status(500).send('Failed to take screenshot.');
+  } finally {
+    if (browser) await browser.close();
+  }
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
