@@ -1,6 +1,6 @@
 document.getElementById('scrnBTN').addEventListener('click', async () => {
     try {
-        const response = await fetch('https://render-rla4.onrender.com/screenshot', {
+        const response = await fetch('https://render-vkhy.onrender.com', {
             method: 'POST',
             credentials: 'include',
             headers: {
