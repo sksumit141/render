@@ -1,6 +1,6 @@
 document.getElementById('scrnBTN').addEventListener('click', async () => {
     try {
-        const response = await fetch('https://render-vkhy.onrender.com', {
+        const response = await fetch('https://render-vkhy.onrender.com/screenshot', {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -10,7 +10,7 @@ document.getElementById('scrnBTN').addEventListener('click', async () => {
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`Server error: ${response.status} - ${await response.text()}`);
         }
 
         const blob = await response.blob();
