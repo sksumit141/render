@@ -32,11 +32,6 @@ app.use(express.json());
 app.post('/screenshot', async (req, res) => {
   let browser;
   try {
-    const { html, url } = req.body;
-    if (!html) {
-      return res.status(400).send('Missing HTML in request body');
-    }
-
     browser = await puppeteer.launch({
       headless: 'new',
       args: [
@@ -52,28 +47,33 @@ app.post('/screenshot', async (req, res) => {
     });
 
     const page = await browser.newPage();
-    await page.setContent(html);
+    
+    // Navigate directly to the frontend URL
+    await page.goto('https://render-sand-zeta.vercel.app', {
+      waitUntil: 'networkidle0',
+      timeout: 30000
+    });
 
-    // Log browser console messages (optional)
-    page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+    // Take screenshot
+    const screenshot = await page.screenshot({ 
+      type: 'png',
+      fullPage: true,
+      encoding: 'binary'
+    });
 
-    // Render raw HTML directly
-    await page.setContent(html, { waitUntil: 'domcontentloaded' });
+    // Set response headers
+    res.set({
+      'Content-Type': 'image/png',
+      'Content-Length': screenshot.length,
+      'Content-Disposition': 'attachment; filename="screenshot.png"'
+    });
 
-    // Adjust viewport to full page
-    const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
-    await page.setViewport({ width: 1200, height: bodyHeight });
-
-    const screenshot = await page.screenshot({ type: 'png' });
-
-    // Send the screenshot file
-    res.setHeader('Content-Disposition', 'attachment; filename="screenshot.png"');
-    res.setHeader('Content-Type', 'image/png');
-    res.send(screenshot);
+    // Send the response
+    return res.status(200).send(screenshot);
 
   } catch (error) {
     console.error('Error taking screenshot:', error);
-    res.status(500).send('Failed to take screenshot.');
+    return res.status(500).json({ error: error.message });
   } finally {
     if (browser) await browser.close();
   }
