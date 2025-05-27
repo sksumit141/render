@@ -7,14 +7,14 @@ require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS config
+// Enable CORS for frontend and localhost
 app.use(cors({
   origin: ['https://render-sand-zeta.vercel.app', 'http://localhost:3000'],
   methods: ['GET', 'POST'],
   credentials: true
 }));
 
-// Add CSP headers middleware
+// Content Security Policy headers
 app.use((req, res, next) => {
   res.setHeader(
     'Content-Security-Policy',
@@ -23,9 +23,19 @@ app.use((req, res, next) => {
   next();
 });
 
+// Middleware to accept raw HTML
+app.use(express.text({ type: 'text/html' }));
+
+// Screenshot endpoint
 app.post('/screenshot', async (req, res) => {
   let browser;
   try {
+    const html = req.body;
+
+    if (!html) {
+      return res.status(400).send('Missing HTML in request body');
+    }
+
     browser = await puppeteer.launch({
       headless: 'new',
       args: [
@@ -42,19 +52,19 @@ app.post('/screenshot', async (req, res) => {
 
     const page = await browser.newPage();
 
-    // Log browser console messages
+    // Log browser console messages (optional)
     page.on('console', msg => console.log('PAGE LOG:', msg.text()));
 
-    // Use the public URL when deployed
-    const url = process.env.TARGET_URL || `http://localhost:${PORT}`;
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    // Render raw HTML directly
+    await page.setContent(html, { waitUntil: 'domcontentloaded' });
 
-    // Get full page height
+    // Adjust viewport to full page
     const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
     await page.setViewport({ width: 1200, height: bodyHeight });
 
     const screenshot = await page.screenshot({ type: 'png' });
 
+    // Send the screenshot file
     res.setHeader('Content-Disposition', 'attachment; filename="screenshot.png"');
     res.setHeader('Content-Type', 'image/png');
     res.send(screenshot);
@@ -65,6 +75,11 @@ app.post('/screenshot', async (req, res) => {
   } finally {
     if (browser) await browser.close();
   }
+});
+
+// Optional root route
+app.get('/', (req, res) => {
+  res.send('Puppeteer screenshot service is running.');
 });
 
 app.listen(PORT, '0.0.0.0', () => {
