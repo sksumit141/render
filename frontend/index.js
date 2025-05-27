@@ -1,14 +1,29 @@
 document.getElementById('scrnBTN').addEventListener('click', async () => {
     try {
-        // Direct download of the static image
+        const imagePath = './images/pinterest-infographic.png';
+        
+        // Check if file exists
+        const response = await fetch(imagePath);
+        if (!response.ok) {
+            throw new Error('Image not found');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        
         const a = document.createElement('a');
-        a.href = 'pinterest-infographic.png';  // Path to your static image
+        a.href = url;
         a.download = 'pinterest-marketing-infographic.png';
         document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
+        
+        // Cleanup
+        setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }, 100);
     } catch (error) {
         console.error('Download failed:', error);
-        alert('Failed to download the image.');
+        alert('Failed to download the image. Please ensure the image exists in the images folder.');
     }
 });
