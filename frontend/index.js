@@ -1,25 +1,14 @@
 document.getElementById('scrnBTN').addEventListener('click', async () => {
     try {
-        const response = await axios({
-            method: 'post',
-            url: 'https://render-vkhy.onrender.com/screenshot',
-            responseType: 'blob',
-            withCredentials: true,
-            headers: {
-                'Accept': 'image/png'
-            }
-        });
-
-        const url = URL.createObjectURL(response.data);
+        // Direct download of the static image
         const a = document.createElement('a');
-        a.href = url;
-        a.download = `screenshot_${Date.now()}.png`;
+        a.href = 'pinterest-infographic.png';  // Path to your static image
+        a.download = 'pinterest-marketing-infographic.png';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
     } catch (error) {
-        console.error('Screenshot failed:', error);
-        alert('Screenshot failed: ' + (error.response?.data || error.message));
+        console.error('Download failed:', error);
+        alert('Failed to download the image.');
     }
 });
