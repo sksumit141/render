@@ -1,6 +1,6 @@
 document.getElementById('scrnBTN').addEventListener('click', async () => {
     try {
-        const imagePath = './images/pinterest-infographic.png';
+        const imagePath = './images/screenshot.png';
         
         // Check if file exists
         const response = await fetch(imagePath);
@@ -13,7 +13,7 @@ document.getElementById('scrnBTN').addEventListener('click', async () => {
         
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'pinterest-marketing-infographic.png';
+        a.download = 'screenshot.png';
         document.body.appendChild(a);
         a.click();
         
