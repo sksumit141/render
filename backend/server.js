@@ -26,12 +26,13 @@ app.use((req, res, next) => {
 // Middleware to accept raw HTML
 app.use(express.text({ type: 'text/html' }));
 
-// Screenshot endpoint
+// Add this near the top with other middleware
+app.use(express.json());
+
 app.post('/screenshot', async (req, res) => {
   let browser;
   try {
-    const html = req.body;
-
+    const { html, url } = req.body;
     if (!html) {
       return res.status(400).send('Missing HTML in request body');
     }
@@ -51,6 +52,7 @@ app.post('/screenshot', async (req, res) => {
     });
 
     const page = await browser.newPage();
+    await page.setContent(html);
 
     // Log browser console messages (optional)
     page.on('console', msg => console.log('PAGE LOG:', msg.text()));

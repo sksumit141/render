@@ -4,9 +4,14 @@ document.getElementById('scrnBTN').addEventListener('click', async () => {
             method: 'POST',
             credentials: 'include',
             headers: {
-                'Accept': 'image/png'
+                'Accept': 'image/png',
+                'Content-Type': 'application/json'
             },
-            mode: 'cors'
+            mode: 'cors',
+            body: JSON.stringify({
+                html: document.documentElement.outerHTML,
+                url: window.location.href
+            })
         });
 
         if (!response.ok) {
