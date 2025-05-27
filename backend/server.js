@@ -8,18 +8,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Enable CORS for frontend and localhost
-// Update CORS configuration
 app.use(cors({
   origin: ['https://render-sand-zeta.vercel.app', 'http://localhost:3000'],
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Accept'],
-  credentials: true,
-  preflightContinue: false,
-  optionsSuccessStatus: 204
+  methods: ['GET', 'POST'],
+  credentials: true
 }));
-
-// Add OPTIONS handler
-app.options('/screenshot', cors());
 
 // Content Security Policy headers
 app.use((req, res, next) => {
@@ -39,6 +32,11 @@ app.use(express.json());
 app.post('/screenshot', async (req, res) => {
   let browser;
   try {
+    const { html, url } = req.body;
+    if (!html) {
+      return res.status(400).send('Missing HTML in request body');
+    }
+
     browser = await puppeteer.launch({
       headless: 'new',
       args: [
@@ -54,33 +52,28 @@ app.post('/screenshot', async (req, res) => {
     });
 
     const page = await browser.newPage();
-    
-    // Navigate directly to the frontend URL
-    await page.goto('https://render-sand-zeta.vercel.app', {
-      waitUntil: 'networkidle0',
-      timeout: 30000
-    });
+    await page.setContent(html);
 
-    // Take screenshot
-    const screenshot = await page.screenshot({ 
-      type: 'png',
-      fullPage: true,
-      encoding: 'binary'
-    });
+    // Log browser console messages (optional)
+    page.on('console', msg => console.log('PAGE LOG:', msg.text()));
 
-    // Set response headers
-    res.set({
-      'Content-Type': 'image/png',
-      'Content-Length': screenshot.length,
-      'Content-Disposition': 'attachment; filename="screenshot.png"'
-    });
+    // Render raw HTML directly
+    await page.setContent(html, { waitUntil: 'domcontentloaded' });
 
-    // Send the response
-    return res.status(200).send(screenshot);
+    // Adjust viewport to full page
+    const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
+    await page.setViewport({ width: 1200, height: bodyHeight });
+
+    const screenshot = await page.screenshot({ type: 'png' });
+
+    // Send the screenshot file
+    res.setHeader('Content-Disposition', 'attachment; filename="screenshot.png"');
+    res.setHeader('Content-Type', 'image/png');
+    res.send(screenshot);
 
   } catch (error) {
     console.error('Error taking screenshot:', error);
-    return res.status(500).json({ error: error.message });
+    res.status(500).send('Failed to take screenshot.');
   } finally {
     if (browser) await browser.close();
   }
