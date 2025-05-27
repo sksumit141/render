@@ -7,11 +7,7 @@ document.getElementById('scrnBTN').addEventListener('click', async () => {
                 'Accept': 'image/png',
                 'Content-Type': 'application/json'
             },
-            mode: 'cors',
-            body: JSON.stringify({
-                html: document.documentElement.outerHTML,
-                url: window.location.href
-            })
+            mode: 'cors'
         });
 
         if (!response.ok) {

@@ -8,11 +8,18 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Enable CORS for frontend and localhost
+// Update CORS configuration
 app.use(cors({
   origin: ['https://render-sand-zeta.vercel.app', 'http://localhost:3000'],
-  methods: ['GET', 'POST'],
-  credentials: true
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Accept'],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
+
+// Add OPTIONS handler
+app.options('/screenshot', cors());
 
 // Content Security Policy headers
 app.use((req, res, next) => {
